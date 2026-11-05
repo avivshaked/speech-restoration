@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# venv / uv
+.venv/
+venv/
+.uv/
+
+# Test / lint caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Experiment outputs — never commit (anchored to repo root)
+/runs/
+
+# Raw + processed audio corpora — too large (anchored to repo root, NOT
+# src/voice_cleanup/data/ which is a Python submodule)
+/data/
+
+# Vendored third-party repos (Resemble Enhance, sgmse, etc.)
+/external/
+
+# Model checkpoints
+*.ckpt
+*.pt
+*.pth
+*.onnx
+
+# Audio binaries — commit explicitly with `git add -f` if needed
+*.wav
+*.flac
+*.mp3
+*.ogg
+
+# Generated docs
+*.docx
+
+# MkDocs build output — regenerate via `uv run mkdocs build`
+/site/
+
+# Downloaded paper PDFs — regenerate via papers/download_papers.py
+docs/research-papers/*.pdf
+
+# Extracted paper markdown — regenerate via the pdf-clean-markdown skill
+docs/research-papers-md/
+
+# Claude Code per-machine settings (shared settings.json may be committed)
+.claude/settings.local.json
+
+# Logs
+*.log
+wandb/
+mlruns/
+
+# OS / misc
+Thumbs.db

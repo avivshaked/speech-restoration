@@ -1,0 +1,68 @@
+[project]
+name = "voice-cleanup"
+version = "0.1.0"
+description = "Speech denoising, dereverberation, and voice presence restoration for podcast-style audio."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Aviv Shaked" }]
+dependencies = [
+    "torch>=2.2",
+    "torchaudio>=2.2",
+    "numpy>=1.26",
+    "soundfile>=0.12",
+    "pesq>=0.0.4",
+    "pystoi>=0.4.1",
+    "rich>=15.0.0",
+    "onnxruntime>=1.26.0",
+    "transformers>=5.9.0",
+    "accelerate>=1.13.0",
+    "jiwer>=4.0.0",
+    "pandas>=3.0.3",
+    "librosa>=0.11.0",
+    "matplotlib>=3.10.9",
+    "omegaconf>=2.3.0",
+    "tabulate>=0.10.0",
+    "imageio-ffmpeg>=0.6.0",
+    "pyloudnorm>=0.2.0",
+    "deepspeed>=0.19.0",
+    "faster-whisper>=1.2.1",
+    "nvidia-cublas-cu12>=12.9.2.10",
+    "nvidia-cudnn-cu12>=9.22.0.52",
+    "voicefixer>=0.1.3",
+]
+
+[project.scripts]
+voice-cleanup = "voice_cleanup.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+docs = [
+    "mkdocs-material>=9.5",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/voice_cleanup"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
