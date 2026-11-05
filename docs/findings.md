@@ -93,8 +93,6 @@ The training script chose each producer's best checkpoint by this distance on th
 
 The "natural" variant takes the de-breathed studio take as its training input, with the same target. Input and target both lack breaths, so nothing in its training teaches breath removal. At inference it is fed the unprocessed take, breaths included. Its distance to a target with the breaths removed is larger by design. `scripts/validate_breath_preservation.py` measures whether the breaths survive; its result at the time was recorded in working notes, not saved as a run output.
 
-In unblinded listening during training I preferred the cleanup model's output to the engineer's version.
-
 ## 5. The full-band restorer
 
 Nothing in the DAPS conditions removes high frequencies, and a restorer fine-tuned on them never has to learn bandwidth extension. A second fine-tune started again from the off-the-shelf Resemble Enhance weights and trained on VCTK and Hi-Fi TTS, which are recorded at 44.1 kHz or above. The main synthetic degradations were EQ damage and bandwidth limiting. An automatic quality filter scored 368,433 candidate training clips and dropped 14,520 (3.9%). The best checkpoint was at step 6,000, with validation loss down from 0.386 to 0.234.
