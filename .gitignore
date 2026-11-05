@@ -37,8 +37,12 @@ htmlcov/
 # Vendored third-party repos (Resemble Enhance, sgmse, etc.)
 /external/
 
+# Downloaded trained weights (see README, "Trained models")
+/models/
+
 # Model checkpoints
 *.ckpt
+*.safetensors
 *.pt
 *.pth
 *.onnx
@@ -51,18 +55,6 @@ htmlcov/
 
 # Generated docs
 *.docx
-
-# MkDocs build output — regenerate via `uv run mkdocs build`
-/site/
-
-# Downloaded paper PDFs — regenerate via papers/download_papers.py
-docs/research-papers/*.pdf
-
-# Extracted paper markdown — regenerate via the pdf-clean-markdown skill
-docs/research-papers-md/
-
-# Claude Code per-machine settings (shared settings.json may be committed)
-.claude/settings.local.json
 
 # Logs
 *.log

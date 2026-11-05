@@ -35,12 +35,12 @@ Short passages adapted from the projects below are marked in the source with a c
 |---|---|---|---|
 | [DAPS](https://zenodo.org/records/4660670) | restorer fine-tuning and evaluation, producer training | **CC BY-NC 4.0** | confirmed |
 | [EARS](https://github.com/facebookresearch/ears_dataset) | clean reference for the scoreboard | **CC BY-NC 4.0** | confirmed |
-| [VCTK 0.92](https://datashare.ed.ac.uk/handle/10283/3443) | full-band rebuild, synthetic comparison clips | CC BY 4.0 (licence file on DataShare) | confirmed |
-| [Hi-Fi TTS](https://www.openslr.org/109/) | full-band rebuild | CC BY 4.0 | confirmed |
+| [VCTK 0.92](https://datashare.ed.ac.uk/handle/10283/3443) | full-band restorer, synthetic comparison clips | CC BY 4.0 (licence file on DataShare) | confirmed |
+| [Hi-Fi TTS](https://www.openslr.org/109/) | full-band restorer | CC BY 4.0 | confirmed |
 | archive.org podcast clips (`manifests/podcast-real-candidates.json`) | real-world, no-reference test set | per item, as recorded in the manifest; most are CC BY-NC-ND | per uploader metadata |
 | archive.org old-time radio (`scripts/fetch_pd_radio_refs.py`) | real bandwidth-limited references | Public Domain Mark or CC0, per item | per uploader metadata |
 
-Weights trained on DAPS or EARS inherit their non-commercial terms. No such weights are published here.
+Weights trained on DAPS or EARS inherit their non-commercial terms. The weights trained in this project are not in this repository. The DAPS-trained ones are published separately at [shakeda/speech-restoration-models](https://huggingface.co/shakeda/speech-restoration-models) under CC BY-NC 4.0, with the DAPS citation and the Resemble Enhance MIT notice.
 
 ## MIT licence text
 

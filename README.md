@@ -1,38 +1,46 @@
-# Voice Cleanup
+# speech-restoration
 
-Experiments in restoring speech recorded on consumer devices in ordinary rooms so it sounds like a studio recording. I fine-tuned an open generative restoration model, trained a small mastering model from scratch, and built an evaluation harness to judge both. The fine-tuned model copes with noisy, reverberant recordings from phones and tablets but not with severe bandwidth loss (the "old radio voice"). That is where the project stopped.
+Experiments in making speech recorded on phones and tablets in ordinary rooms sound like a studio recording. There are two models, trained and evaluated separately. The restorer is an open generative model, Resemble Enhance, fine-tuned to clean up device recordings. The producer is a small model I trained from scratch to reproduce a studio engineer's post-production on clean speech. An evaluation harness scores both. Neither restorer I trained handles severe bandwidth loss (the "old radio voice").
+
+The project's working name was Voice Cleanup, and the Python package is still `voice_cleanup`.
 
 ## Where it stands
 
 ### What works
 
-- The restorer is [Resemble Enhance](https://github.com/resemble-ai/resemble-enhance) fine-tuned on [DAPS](https://zenodo.org/records/4660670), which has the same scripts recorded in a studio and on phones and tablets in real rooms. Four speakers were held out. On 12 held-out clips, mean Whisper word error rate (WER) fell from 0.273 for the off-the-shelf model to 0.102 after about half an epoch. Training on to six epochs moved it between 0.067 and 0.219 without a trend.
-- The producer is a 2.79M-parameter spectral U-Net, trained from scratch to reproduce a studio engineer's processing (EQ, compression, loudness, breath removal) on clean speech. On held-out speakers it raised loudness by 4.1 LU with WER 0.013 and speaker similarity 0.998. I preferred its output to the engineer's master it was trained on.
-- The evaluation harness covers PESQ, ESTOI, SI-SDR, DNSMOS, SQUIM, NISQA, Whisper WER, speaker similarity and spectral balance. It has a registry for swapping restoration models in, and every run writes a loudness-matched A/B listening pack.
+- The producer is a 2.79M-parameter spectral U-Net. Its target is a studio engineer's version of each recording (EQ, compression, loudness, breath removal). On 20 clips from four held-out speakers, its log-magnitude distance to that target was 0.424. The unprocessed input scored 0.792, a loudness match 0.660 and a fixed EQ plus gain fitted on the training speakers 0.602. It was closer than all three on every clip, matched the target's loudness (+4.3 LU) and reached most of its compression: crest factor fell 2.6 dB, and 3.2 dB in the engineer's version.
+  - None of those baselines compresses, and the distance measure is also the producer's training loss. The checkpoint was chosen on 4 of the 20 clips; on the other 16 the figures barely move ([findings](docs/findings.md#4-the-producer)).
+- Fine-tuning fixed most of the words off-the-shelf [Resemble Enhance](https://github.com/resemble-ai/resemble-enhance) got wrong. The restorer was fine-tuned on [DAPS](https://zenodo.org/records/4660670), which has the same scripts recorded in a studio and on phones and tablets in real rooms. On 48 clips from four held-out speakers, across all 12 device and room conditions, mean Whisper word error rate (WER) fell from 0.089 to 0.038. Those figures come from the last checkpoint, which no evaluation clip helped choose.
+- The evaluation harness runs intrusive scores (PESQ, ESTOI, SI-SDR), MOS predictors (DNSMOS, SQUIM, NISQA), Whisper WER, speaker similarity and spectral balance. Restoration models plug in through a registry, and every run writes a loudness-matched A/B listening pack.
 
 ### What doesn't
 
-- The restorer only ever saw DAPS conditions: background noise, room reverberation and device colouration. It was not trained on bandwidth loss, clipping or codec damage.
-- A rebuild on full-band speech (VCTK and Hi-Fi TTS) with synthetic bandwidth and EQ damage improved WER and high-frequency recovery but failed the listening test (below).
-- Restoration costs some intelligibility. On real DAPS device recordings the untreated audio already transcribed almost perfectly (WER 0.00 to 0.03), and the off-the-shelf restorer scored the same or worse on every clip. The fine-tuning runs didn't record the untreated input's WER, so I can't say whether the fine-tuned model beats doing nothing on that measure.
+- Neither the off-the-shelf nor the fine-tuned model made the DAPS speech easier to transcribe than the untreated recordings, which already had a mean WER of 0.028. Indoors the fine-tuned model was level with them (0.020 and 0.023). On the two balcony conditions it was worse on all 8 clips (0.126 and 0.054).
+- Beyond voice identity, nothing in this evaluation measures how close the restored audio comes to the studio take. The intrusive scores assume the output keeps the reference's waveform, which a generative model that resynthesises the audio does not, so this evaluation leaves them out.
+- The restorer was fine-tuned only on DAPS conditions: background noise, room reverberation and device colouration. It was not trained on bandwidth loss, clipping or codec damage.
+- A second restorer, trained on full-band speech (VCTK and Hi-Fi TTS) with synthetic bandwidth and EQ damage, improved WER and high-frequency recovery but failed my listening check (below).
 
-### Where it stopped
+### Unfinished
 
-Comparing other open restorers on bandwidth-limited speech. [VoiceFixer](https://github.com/haoheliu/voicefixer) came closest. On a synthetic bandwidth-limited VCTK clip it brought the 8-16 kHz energy from -38.4 dB to -7.5 dB, level with the clean original, where off-the-shelf Resemble Enhance reached -20.1 dB. It also brightens speech that was already clean (by up to 4.4 dB), and it sounds too bright. I added a high-shelf filter to tame it and didn't take the comparison further.
+Comparing other open restorers on bandwidth-limited speech. Three synthetic bandwidth-limited VCTK clips started 26 to 31 dB short of their clean originals' 8-16 kHz energy. [VoiceFixer](https://github.com/haoheliu/voicefixer) brought all three to within 1.3 dB of the originals; off-the-shelf Resemble Enhance stayed 5 to 13 dB short. VoiceFixer also brightens speech that was already clean, by up to 4.4 dB, and sounds too bright. I wrote a high-shelf filter to tame it and stopped before settling its settings.
 
-## What the metrics missed
+## Metrics and listening
 
-On moderately damaged synthetic speech, off-the-shelf Resemble Enhance had a WER of 0.773, against 0.059 for the untreated input. NISQA, which predicts a listener's score, gave the same output 4.01 out of 5.
+On moderately damaged synthetic speech (6 clips), off-the-shelf Resemble Enhance had a WER of 0.773, where the untreated input had 0.059. NISQA, which predicts a listener's score on a scale of 1 to 5, gave the same output 4.01.
 
-The full-band rebuild was Resemble Enhance fine-tuned on VCTK and Hi-Fi TTS. On held-out speakers WER fell from 0.135 to 0.056, high-frequency recovery rose from 11.1 to 15.1 dB, and speaker similarity was 0.986. The same held-out samples did not sound natural or like the clean targets.
+The full-band restorer was Resemble Enhance fine-tuned on VCTK and Hi-Fi TTS. On 16 held-out synthetic clips its WER was 0.056, and the off-the-shelf model's was 0.135. It added 15.1 dB of 8-16 kHz energy over the damaged input, where the off-the-shelf model added 11.1 dB. The untreated input's WER was not recorded in that run. The same held-out samples did not sound natural or like the clean targets.
 
-Neither WER, which compares transcripts, nor speaker similarity, which compares voice embeddings, measures naturalness. The MOS predictors were trained on other kinds of damage, and on this material they scored hallucinated speech highly. My best explanation for the rebuild is that Resemble Enhance conditions on the damaged input's spectrum, so it rebuilds the colouration it is given. Fixing severe damage probably needs a model with a stronger prior over speech, and the strongest published ones (Miipher, FINALLY) had no open weights when I checked in May 2026.
+That evaluation measured transcripts, voice identity and band energy, and none of those checks naturalness. The MOS predictors are meant to, but they were trained on other kinds of damage, and on this material they scored hallucinated speech highly. My best explanation for the full-band restorer is that Resemble Enhance conditions on the damaged input's spectrum and rebuilds the colouration it is given. Fixing severe damage probably needs a model with a stronger prior over speech, and the strongest published ones (Miipher, FINALLY) had no open weights when I checked in May 2026.
 
-Every run writes a loudness-matched A/B pack, and a listening pass decided whether a model moved forward. All the listening was mine. I worked as a sound designer for seventeen years before moving into software, but this was still one listener with no formal protocol. Sample sizes are small throughout: 4 to 16 clips, one seed. The numbers and their caveats are in [docs/findings.md](docs/findings.md).
+A listening pass decided whether a model moved forward. All the listening was mine (seventeen years as a sound designer), unblinded and with no formal protocol. The held-out evaluation above used 48 restorer clips and 20 producer clips; most earlier runs used 4 to 16. The numbers and their caveats are in [docs/findings.md](docs/findings.md).
+
+## Trained models
+
+The fine-tuned DAPS restorer and two producers are on Hugging Face at [shakeda/speech-restoration-models](https://huggingface.co/shakeda/speech-restoration-models), as safetensors files. `producer-cleanup` is the producer described above. `producer-natural` was trained with the de-breathed take as input, so it should leave breaths in. They are licensed CC BY-NC 4.0 because they were trained on DAPS. `src/voice_cleanup/infer/pretrained.py` loads them.
 
 ## Running the evaluation
 
-Needs Linux or WSL2, an NVIDIA GPU (developed on a 24 GB RTX 4090), Python 3.11 and [uv](https://docs.astral.sh/uv/).
+Needs Linux or WSL2, an NVIDIA GPU (developed on a 24 GB RTX 4090), Python 3.11, [uv](https://docs.astral.sh/uv/) and the system `libaio` library, which DeepSpeed compiles against (on Ubuntu, `sudo apt install libaio-dev`).
 
 ```bash
 git clone https://github.com/avivshaked/speech-restoration.git
@@ -40,23 +48,35 @@ cd speech-restoration
 uv sync
 uv run pytest -m "not slow"
 
-# Clean reference speech (EARS subset, about 6 GB) and third-party models, fetched from source
-uv run python scripts/fetch_clean_corpora.py --ears-only
+# Third-party models, fetched from their sources
 uv run python scripts/fetch_mpsenet.py
 uv run python scripts/fetch_resemble_enhance.py
 uv run python scripts/fetch_nisqa.py
 
-# Degrade clean speech, restore it with each model, score against the original
+# Held-out evaluation of the trained models: needs DAPS (about 16 GB) and the weights
+uv run python scripts/fetch_clean_corpora.py --daps-only
+uv run python -c "from huggingface_hub import snapshot_download; snapshot_download('shakeda/speech-restoration-models', local_dir='models')"
+uv run python scripts/eval_heldout.py \
+    --restorer last=models/restorer-daps/model.safetensors \
+    --producer cleanup=models/producer-cleanup/model.safetensors
+uv run python scripts/heldout_stats.py runs/heldout-eval/<timestamp>/results.json
+
+# Synthetic-damage scoreboard on the EARS subset (about 6 GB);
+# "moderate" is a mid-strength mix of the degradations in src/voice_cleanup/data/degrade.py
+uv run python scripts/fetch_clean_corpora.py --ears-only
 uv run python scripts/run_restoration_scoreboard.py --recipe moderate --limit 6
 ```
 
-One fast test fails unless the system `libaio` library is installed, because DeepSpeed compiles against it. The tests that need real audio skip until `scripts/download_test_set.py` has run.
+Results go to `runs/`. The held-out evaluation took 42 minutes on the RTX 4090. [docs/data.md](docs/data.md) lists each dataset with its use, size, licence and fetch script.
 
-Scores, a markdown scoreboard and the A/B listening pack go to `runs/restoration-scoreboard/<timestamp>/`. [docs/data.md](docs/data.md) lists each dataset with its use, size, licence and fetch script. The trained checkpoints are not published, so reproducing the fine-tuned results means retraining (`scripts/finetune_re_daps.py`, `scripts/train_producer.py`).
+Known issues:
+
+- The locked environment installs two cuDNN 9 builds, PyTorch's own and the one faster-whisper needs. PyTorch's GPU convolutions then fail with `CUDNN_STATUS_SUBLIBRARY_VERSION_MISMATCH`. `scripts/eval_heldout.py` sets `torch.backends.cudnn.enabled = False` to avoid this. It is the only script re-run in this environment, and other GPU scripts may need the same line.
+- The tests that need real audio skip until the podcast test set has been downloaded with `scripts/download_test_set.py` (see [docs/data.md](docs/data.md)).
 
 ## Data, models and licences
 
-This repository contains code and documentation only. No audio, datasets or model weights are included. The scripts download them from their original sources, and each carries its own licence. Several are non-commercial: DAPS and EARS (CC BY-NC 4.0), the NISQA weights (CC BY-NC-SA 4.0) and the SQUIM model (CC BY-NC 4.0). Running the full pipeline is therefore non-commercial in practice, whatever the licence on this code. PESQ's ITU-T terms also restrict commercial use of its scores. Details and attributions are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+This repository contains code and documentation only. No audio, datasets or model weights are included. The scripts download them from their original sources, and each carries its own licence. Several are non-commercial: DAPS and EARS (CC BY-NC 4.0), the NISQA weights (CC BY-NC-SA 4.0), the SQUIM model (CC BY-NC 4.0) and the weights trained here (CC BY-NC 4.0). Running the full pipeline is therefore non-commercial in practice, whatever the licence on this code. PESQ's ITU-T terms also restrict commercial use of its scores. Details and attributions are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## How it was built
 
